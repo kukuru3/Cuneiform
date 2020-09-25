@@ -2,18 +2,31 @@
 
 namespace Cuneiform {
     public class Group : UIElement {
-
         public override string Print => "Group";
-        protected override void CreateSlices() { }
-
     }
 
-    public class Panel : UIElement {
+    public class Panel : UIElement, IHasRenderTexture {
+        public bool ToTexture { get; }
+
+        public Panel(bool toTexture = false) {
+            ToTexture = toTexture;
+            if (toTexture) Canvas = new TextureCanvas((0,0,1,1));
+        }
 
         public override string Print => $"Panel {LocalRect.W}x{LocalRect.H}";
 
-        protected override void CreateSlices() { }
+        public TextureCanvas Canvas { get; private set; }
 
+        protected override void OnLocalRectUpdated() {
+
+        }
+
+        internal override void Update() {
+            base.Update();
+            if (!ToTexture) return;
+            if (tree != null)
+                Canvas.Rect = WorldRect;
+        }
     }
 
     public class Button : UIElement {
@@ -21,8 +34,6 @@ namespace Cuneiform {
         public Button() {
             Clickable = true;
         }
-
-        protected override void CreateSlices() { }
     }
 
     public class Label : UIElement, IHasColor {
@@ -36,12 +47,13 @@ namespace Cuneiform {
 
         Slices.Text textSlice;
 
-        protected override void CreateSlices() {
+        void CreateTextSlice() {
             textSlice = new Slices.Text();
             AddSlice(textSlice);
         }
 
         internal override void Update() {
+            if (textSlice == null) CreateTextSlice();
             base.Update();
             var s = EffectiveStyle;
             var textObject = textSlice.SourceText;
@@ -51,7 +63,7 @@ namespace Cuneiform {
             if (f != null && f != textObject.Font) textObject.Font = f;
             textObject.Anchor = TextAnchor;
             if (s?.FontSize > 0) textObject.CharacterSize = s.FontSize;
-            textObject.Rect = WorldRect;
+            textObject.Rect = DrawRect;
             textObject.Color = Color ?? s?.FontColor ?? Ur.Color.White;
         }
 

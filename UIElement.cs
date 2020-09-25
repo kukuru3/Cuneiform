@@ -8,6 +8,7 @@ using Ur.Geometry;
 namespace Cuneiform {
 
     public abstract class UIElement : IComparable<UIElement>, IUIElement {
+
         public UISystem UI { get; internal set; }
         internal Tree<UIElement> tree;
 
@@ -18,6 +19,8 @@ namespace Cuneiform {
         internal IEnumerable<UIElement> Children => tree.ChildrenOf(this);
 
         public Style Style { get; set; }
+
+        internal bool IsDrawRoot => this is IHasRenderTexture hrt ? hrt.ToTexture : Parent == null;
 
         public bool Enabled { get; set; } = true; // you can disable this later on.
         public bool Clickable { get; set; } = false; // non clickables are never interacted with. Useful for labels, groups...
@@ -44,7 +47,16 @@ namespace Cuneiform {
             if (behaviours.Remove(behaviour)) behaviour.Detach();
         }
 
-        public Rect LocalRect { get; set; }
+        Rect localRect;
+
+        public Rect LocalRect { 
+            get => localRect;
+            set {
+                localRect = value;
+                OnLocalRectUpdated();
+            }
+        }
+
         public Rect WorldRect {
             get {
                 var p = Parent;
@@ -59,6 +71,24 @@ namespace Cuneiform {
             }
         }
 
+        /// <summary>
+        /// Draw Rect is similar to world rect, but returns coordinates relative to the DRAW ROOT.
+        /// 
+        /// </summary>
+        public Rect DrawRect { get { 
+            // to get local coords relative to the draw root just add all the local coords OF ALL THE ELEMENTS UP THE CHAIN
+            // UP TO DRAW ROOT, BUT NOT INCLUDING DRAW ROOT
+            Vector2 xy = (0,0);
+            for (var e = this; e != null; e = e.Parent) {
+                if (e.IsDrawRoot) break;
+                xy += (e.localRect.X0, e.localRect.Y0);
+            }            
+            return Rect.FromDimensions(xy.x, xy.y, localRect.W, localRect.H);
+        } }
+
+        protected virtual void OnLocalRectUpdated() {
+
+        }
 
         public UIElement() {
             slices = new List<Slice>();
@@ -74,8 +104,6 @@ namespace Cuneiform {
 
         public virtual string Print => "Element";
 
-        protected abstract void CreateSlices();
-
         protected void CleanupSlices() {
             foreach (var slice in slices) slice.Cleanup();
             slices.Clear();
@@ -87,7 +115,6 @@ namespace Cuneiform {
 
         internal void OnCreated() { 
             behaviours = new List<UIBehaviour>();
-            CreateSlices();
         }
 
         internal void OnRemoved() { CleanupSlices(); }
@@ -102,10 +129,19 @@ namespace Cuneiform {
             return 0;
         }
 
+        IHasRenderTexture FindDrawRoot() {
+            for (var e = this; e != null; e = e.Parent)
+                if (e is IHasRenderTexture ihrt && ihrt.ToTexture) return ihrt;
+            
+            return null;
+        }
+
         public void AddSlice(Slice s) {
             slices.Add(s);
             s.Init(this);
-            foreach (var r in s.Renderables) UI.Canvas.Add(r);
+
+            var targetCanvas = FindDrawRoot()?.Canvas ?? UI.Canvas;
+            foreach (var r in s.Renderables) targetCanvas.Add(r);
         }
 
         internal Slice GetSlice(int index) => this.slices[index];

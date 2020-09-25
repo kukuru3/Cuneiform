@@ -57,7 +57,7 @@ namespace Cuneiform.Slices {
 
         internal override void Update() {
             var shadow = (Ninegrid)sourceRenderable;
-            shadow.SetRect(Element.WorldRect.Move(Offset.x, Offset.y).Expand(RenderMargin));
+            shadow.SetRect(Element.DrawRect.Move(Offset.x, Offset.y).Expand(RenderMargin));
         }
     }
 
@@ -90,7 +90,7 @@ namespace Cuneiform.Slices {
 
         internal override void Update() {
             var sr =(Sprite)sourceRenderable;
-            sr.Fit(Element.WorldRect);
+            sr.Fit(Element.DrawRect);
             sr.Color = Color;
             if (Subrect.HasValue) sr.OverrideTextureSubrect(Subrect.Value);
         }
