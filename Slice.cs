@@ -33,14 +33,14 @@ namespace Cuneiform {
 
 namespace Cuneiform.Slices {
     /// <summary>Creates a ninegrid, but needs to have an appropriate texture supplied</summary>
-    public class Shadow : Slice {
+    public class BoxShadow : Slice {
         public int TextureMargin { get; set; } = 32;
         public float RenderMargin { get; set; } = 32f;
         public Ur.Geometry.Vector2 Offset { get; set; }
 
         public SpriteDefinition Source { get; set; }
 
-        public Shadow() {
+        public BoxShadow() {
             Color = Color.Black;
         }
 

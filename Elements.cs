@@ -25,7 +25,7 @@ namespace Cuneiform {
         protected override void CreateSlices() { }
     }
 
-    public class Label : UIElement {
+    public class Label : UIElement, IHasColor {
 
         public string Text { get; set; }
 

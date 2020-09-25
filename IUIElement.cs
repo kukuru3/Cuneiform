@@ -8,4 +8,8 @@ namespace Cuneiform {
 
         Style EffectiveStyle { get; }
     }
+
+    public interface IHasColor {
+        Ur.Color? Color { get; set; }
+    }
 }

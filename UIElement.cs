@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+
 using Ur.Collections;
 using Ur.Geometry;
 
@@ -11,6 +12,7 @@ namespace Cuneiform {
         internal Tree<UIElement> tree;
 
         private List<Slice> slices;
+        private List<UIBehaviour> behaviours;
 
         internal UIElement Parent => tree.ParentOf(this);
         internal IEnumerable<UIElement> Children => tree.ChildrenOf(this);
@@ -33,6 +35,15 @@ namespace Cuneiform {
             }
         }
 
+        public void AttachBehaviour(UIBehaviour behaviour) {
+            behaviour.AttachTo(this);
+            this.behaviours.Add(behaviour);
+        }
+
+        public void RemoveBehaviour(UIBehaviour behaviour) {
+            if (behaviours.Remove(behaviour)) behaviour.Detach();
+        }
+
         public Rect LocalRect { get; set; }
         public Rect WorldRect {
             get {
@@ -53,6 +64,8 @@ namespace Cuneiform {
             slices = new List<Slice>();
         }
 
+        /// <summary> Modifies the rect of a UI element so that it fits the parent, with margin (defaults to zero) </summary>
+        /// <param name="margin"></param>
         public void FitToParent(int margin = 0) {
             if (Parent == null) return;
             var wr = Parent.WorldRect;
@@ -73,6 +86,7 @@ namespace Cuneiform {
         }
 
         internal void OnCreated() { 
+            behaviours = new List<UIBehaviour>();
             CreateSlices();
         }
 
@@ -93,5 +107,7 @@ namespace Cuneiform {
             s.Init(this);
             foreach (var r in s.Renderables) UI.Canvas.Add(r);
         }
+
+        internal Slice GetSlice(int index) => this.slices[index];
     }
 }

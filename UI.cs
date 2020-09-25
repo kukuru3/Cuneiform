@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Ur.Collections;
 using Sargon;
+using Ur.Grid;
 
 namespace Cuneiform {
 
@@ -50,22 +51,33 @@ namespace Cuneiform {
                 item.Update();
             }
 
+            MouseDelta = Context.Input.MousePosition - MousePosition;
+            MousePosition = Context.Input.MousePosition;
+
             ProcessHighlights();
+            UIFrame?.Invoke();
         }
 
         List<UIElement> allUnderCursor;
 
         UIElement cursorHighlighted;
 
+        public event Action HighlightChanged;
+        public event Action UIFrame;
+
+        public Coords MousePosition;
+        public Coords MouseDelta;
+
         public IUIElement Highlighted => cursorHighlighted;
 
-        private void ProcessHighlights() {
-            var mousePosInt = Context.Input.MousePosition;
-            var mousePos = (mousePosInt.X, mousePosInt.Y);
+        private void ProcessHighlights() {            
+            var mousePos = (MousePosition.X, MousePosition.Y);
             allUnderCursor.Clear();
             allUnderCursor.AddRange(tree.GetAllMembersInHierarchyOrder().Where(member => member.Clickable && member.WorldRect.Contains(mousePos)));
             allUnderCursor.Sort();
+            var prevCH = cursorHighlighted;
             cursorHighlighted = allUnderCursor.LastOrDefault();
+            if (prevCH != cursorHighlighted) HighlightChanged?.Invoke();
         }
 
         private void DistributeDepths() {
